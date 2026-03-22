@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Chat Test</title>
+</head>
+
+<body>
+    <h1>Test Chat</h1>
+
+    <div id="messages"></div>
+
+    <input id="text" type="text" placeholder="พิมพ์ข้อความ" />
+    <button id="send">ส่ง</button>
+
+    <script>
+        const messages = document.getElementById("messages");
+        const text = document.getElementById("text");
+        const send = document.getElementById("send");
+
+        const history = [];
+
+        function appendMessage(role, value) {
+            const div = document.createElement("div");
+            div.textContent = `${role}: ${value}`;
+            messages.appendChild(div);
+        }
+
+        send.addEventListener("click", async () => {
+            const userText = text.value.trim();
+            if (!userText) return;
+
+            appendMessage("user", userText);
+            history.push({ role: "user", text: userText });
+            text.value = "";
+
+            const res = await fetch("/.netlify/functions/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    agentId: "ofas-bot",
+                    message: userText,
+                    history
+                })
+            });
+
+            const data = await res.json();
+            appendMessage("bot", data.reply);
+            history.push({ role: "assistant", text: data.reply });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "gemini-chat-widget",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@google/genai": "^1.46.0",
+    "dotenv": "^17.3.1",
+    "googleapis": "^171.4.0"
+  }
+}
