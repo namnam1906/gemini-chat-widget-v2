@@ -112,9 +112,8 @@ async function sendMessage(text) {
     history.push({ role: "user", text: cleanText });
 
     input.value = "";
-    appendTyping();
-    // เพิ่มหลัง appendTyping()
     input.disabled = true;
+    appendTyping();
 
     try {
         const res = await fetch("/.netlify/functions/chat", {
@@ -129,11 +128,19 @@ async function sendMessage(text) {
             })
         });
 
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
+        const raw = await res.text();
+        let data = {};
+
+        try {
+            data = raw ? JSON.parse(raw) : {};
+        } catch (parseError) {
+            throw new Error(`Server returned non-JSON response: ${raw.slice(0, 300)}`);
         }
 
-        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || data.reply || `HTTP ${res.status}`);
+        }
+
         removeTyping();
 
         const reply = data.reply || "ขออภัย ระบบไม่สามารถตอบได้";
@@ -143,13 +150,14 @@ async function sendMessage(text) {
         history.push({ role: "assistant", text: reply });
     } catch (error) {
         removeTyping();
-        const fallback = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
-        appendBotMessage(fallback, []);
-        // ❌ ลบบรรทัดนี้ออก
-        // history.push({ role: "assistant", text: fallback });
-        console.error(error);
+
+        const fallback =
+            String(error.message || "").trim() ||
+            "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+
+        appendBotMessage(`ขออภัยค่ะ\n${fallback}`, []);
+        console.error("[widget] sendMessage error:", error);
     } finally {
-        // เพิ่มใน finally
         input.disabled = false;
         input.focus();
     }

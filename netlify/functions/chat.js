@@ -1,9 +1,9 @@
 import "dotenv/config";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
     retrieveRelevantDocuments,
     buildRetrievalContext
 } from "../../lib/retrieval.js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { buildSystemInstruction, getAgentConfig } from "../../config/agent.js";
 import { prepareConversationMemory } from "../../lib/memory.js";
 import { clearCache } from "../../lib/cache.js";
@@ -11,36 +11,17 @@ import { clearCache } from "../../lib/cache.js";
 function jsonResponse(body, status = 200) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: { "Content-Type": "application/json" }
+        headers: {
+            "Content-Type": "application/json; charset=utf-8"
+        }
     });
 }
 
-// function buildRagPrompt(userMessage, context) {
-//     return `
-// คุณคือผู้ช่วยเจ้าหน้าที่การเงิน
-// คำถามของผู้ใช้: ${userMessage}
-
-// =========================
-// ข้อมูลอ้างอิงจากเอกสาร:
-// =========================
-// ${context || "ไม่มีข้อมูลที่เกี่ยวข้อง"}
-
-// =========================
-// คำสั่งเพิ่มเติม:
-// =========================
-// - ตอบโดยอิงจาก "ข้อมูลอ้างอิง" เท่านั้น ห้ามเดา
-// - ถ้าไม่มีข้อมูล ให้ตอบว่า "ไม่พบข้อมูลที่เกี่ยวข้องในเอกสาร กรุณาติดต่อเจ้าหน้าที่การเงิน"
-// - ตอบเป็นภาษาไทยสุภาพและกระชับ
-// `.trim();
-// }
-
 function buildRagPrompt(userMessage, context) {
     if (!context) {
-        // ไม่มีเอกสาร → ให้ตอบจาก system instruction ได้เลย
         return userMessage;
     }
 
-    // มีเอกสาร → ใช้ RAG context
     return `
 คำถามของผู้ใช้: ${userMessage}
 
@@ -60,52 +41,92 @@ ${context}
 
 const apiKey = process.env.MY_NEW_GEMINI_KEY || process.env.GEMINI_API_KEY;
 
-export default async (req, context) => {
-    try {
-        if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
+export default async (req) => {
+    let userMessage = "";
+    let agentId = "ofas-bot";
+    let history = [];
 
-        if (!apiKey) return jsonResponse({ reply: "ระบบยังไม่ได้ตั้งค่า API key" }, 500);
+    try {
+        if (req.method !== "POST") {
+            return jsonResponse({ error: "Method not allowed" }, 405);
+        }
+
+        if (!apiKey) {
+            return jsonResponse({
+                error: "Missing GEMINI API key",
+                reply: "ระบบยังไม่ได้ตั้งค่า API key"
+            }, 500);
+        }
 
         const body = await req.json().catch(() => null);
-        const { message = "", history = [], agentId = "ofas-bot" } = body || {};
-        const userMessage = typeof message === "string" ? message.trim() : "";
+        if (!body || typeof body !== "object") {
+            return jsonResponse({
+                error: "Invalid request body",
+                reply: "รูปแบบข้อมูลไม่ถูกต้อง"
+            }, 400);
+        }
 
-        if (!userMessage) return jsonResponse({ reply: "กรุณาพิมพ์ข้อความก่อนส่ง" }, 400);
+        userMessage = typeof body.message === "string" ? body.message.trim() : "";
+        agentId = typeof body.agentId === "string" ? body.agentId : "ofas-bot";
+        history = Array.isArray(body.history) ? body.history : [];
+
+        console.log("[chat] incoming message =", userMessage);
+        console.log("[chat] history length =", history.length);
+
+        if (!userMessage) {
+            return jsonResponse({ reply: "กรุณาพิมพ์ข้อความก่อนส่ง" }, 400);
+        }
 
         if (userMessage === "/refresh") {
             clearCache("knowledge-base");
-            return jsonResponse({ reply: "รีเฟรชข้อมูลเรียบร้อยแล้ว", sources: [] });
+            return jsonResponse({
+                reply: "รีเฟรชข้อมูลเรียบร้อยแล้ว",
+                sources: []
+            });
         }
 
-        const relevantDocs = await retrieveRelevantDocuments(userMessage, { topK: 3, minScore: 1 });
-        const retrievalContext = buildRetrievalContext(relevantDocs);
         const agent = getAgentConfig(agentId);
 
-        // เตรียม Memory
-        const { geminiContents } = prepareConversationMemory(history, agent.maxHistoryMessages);
+        let relevantDocs = [];
+        let retrievalContext = "";
 
-        // กรองความถูกต้องของประวัติ (สลับ Role ให้ถูกต้อง)
-        const validHistory = (geminiContents || []).filter(item =>
-            item.parts && item.parts.length > 0 && item.parts[0].text
+        try {
+            relevantDocs = await retrieveRelevantDocuments(userMessage, {
+                topK: 3,
+                minScore: 1
+            });
+            retrievalContext = buildRetrievalContext(relevantDocs);
+            console.log("[chat] relevantDocs =", relevantDocs.length);
+        } catch (retrievalError) {
+            console.error("[chat] retrieval error:", retrievalError);
+        }
+
+        const { geminiContents } = prepareConversationMemory(
+            history,
+            agent.maxHistoryMessages
+        );
+
+        const validHistory = (geminiContents || []).filter((item) =>
+            item &&
+            item.role &&
+            Array.isArray(item.parts) &&
+            item.parts[0] &&
+            item.parts[0].text
         );
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: buildSystemInstruction() // กลับมาใช้แบบมาตรฐาน
+            systemInstruction: buildSystemInstruction()
         });
 
-        console.log("USING API KEY PREFIX:", apiKey.slice(0, 7));
-
-        // 🔥 ใช้ระบบ Chat Session เพื่อให้ SDK จัดการลำดับ Role ให้เอง
         const chat = model.startChat({
             history: validHistory,
             generationConfig: {
-                maxOutputTokens: 1000,
-            },
+                maxOutputTokens: 1000
+            }
         });
 
-        // ส่ง Prompt ที่มี RAG Context เข้าไป
         const prompt = buildRagPrompt(userMessage, retrievalContext);
         const result = await chat.sendMessage(prompt);
         const response = await result.response;
@@ -113,7 +134,7 @@ export default async (req, context) => {
 
         return jsonResponse({
             reply: replyText?.trim() || agent.fallbackMessage,
-            sources: relevantDocs.map(doc => ({
+            sources: relevantDocs.map((doc) => ({
                 name: doc.name,
                 url: doc.webViewLink
             })),
@@ -123,29 +144,34 @@ export default async (req, context) => {
                 historyCount: validHistory.length
             }
         });
-
     } catch (error) {
-        console.error("Chat Error:", error.message);
+        console.error("[chat] fatal error:", error);
 
-        // ถ้าติดปัญหาเรื่องลำดับ Role อีก ให้ลองส่งแบบไม่มี History
-        if (error.message.includes("role")) {
-            console.log("Retrying without history due to role mismatch...");
+        if (String(error?.message || "").toLowerCase().includes("role")) {
             try {
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-                // const result = await model.generateContent(buildRagPrompt(userMessage, ""));
-                // ✅ ใช้ userMessage || "" เพื่อป้องกัน undefined
-                const result = await model.generateContent(buildRagPrompt(userMessage || "", ""));
-                const res = await result.response;
-                return jsonResponse({ reply: res.text(), sources: [] });
+                const model = genAI.getGenerativeModel({
+                    model: "gemini-2.5-flash",
+                    systemInstruction: buildSystemInstruction()
+                });
+
+                const result = await model.generateContent(
+                    buildRagPrompt(userMessage || "", "")
+                );
+                const response = await result.response;
+
+                return jsonResponse({
+                    reply: response.text()?.trim() || "ขออภัย ระบบขัดข้องเรื่องลำดับข้อความ",
+                    sources: []
+                });
             } catch (retryError) {
-                return jsonResponse({ reply: "ขออภัย ระบบขัดข้องเรื่องลำดับข้อความ" }, 500);
+                console.error("[chat] retry without history failed:", retryError);
             }
         }
 
         return jsonResponse({
-            reply: "ขออภัยครับ ระบบขัดข้องชั่วคราว",
-            error: error.message
+            error: error?.message || "Unknown server error",
+            reply: "ขออภัยครับ ระบบขัดข้องชั่วคราว"
         }, 500);
     }
 };
