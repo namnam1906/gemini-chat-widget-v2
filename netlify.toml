@@ -3,3 +3,4 @@
 
 [functions.chat]
   timeout = 30
+  node_bundler = "esbuild"
