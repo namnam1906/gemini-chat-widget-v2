@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OFAS Bot</title>
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
-      margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
       background: transparent;
@@ -17,322 +15,303 @@
       font-family: "Segoe UI", Tahoma, sans-serif;
     }
 
-    /* ===== Launcher Button ===== */
-    .chat-launcher {
+    /* ── Launcher ── */
+    #chat-launcher {
       position: fixed;
       right: 20px;
       bottom: 20px;
-      width: 58px;
-      height: 58px;
+      width: 56px;
+      height: 56px;
       border: none;
       border-radius: 50%;
       background: linear-gradient(135deg, #8b1538, #6e102c);
       color: #fff;
+      font-size: 22px;
       cursor: pointer;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.22);
-      z-index: 1000;
+      box-shadow: 0 8px 24px rgba(139,21,56,0.38);
+      z-index: 100;
       display: grid;
       place-items: center;
-      font-size: 24px;
+      transition: transform 0.18s;
     }
+    #chat-launcher:hover { transform: scale(1.09); }
 
-    /* ===== Chat Panel ===== */
-    .chat-panel {
+    /* ── Panel ── */
+    #chat-panel {
       position: fixed;
       right: 20px;
-      bottom: 90px;
-      width: 360px;
-      height: 580px;
+      bottom: 88px;
+      width: 355px;
+      height: 560px;
       background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.22);
+      border-radius: 22px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.18);
       display: flex;
       flex-direction: column;
-      z-index: 1000;
+      z-index: 100;
       border: 1px solid #e7ddd6;
       overflow: hidden;
     }
 
-    .hidden { display: none !important; }
+    #chat-panel.hidden { display: none; }
 
-    /* Header */
+    /* ── Header ── */
     .chat-header {
       background: linear-gradient(135deg, #8b1538, #6e102c);
       color: #fff;
-      padding: 14px 16px;
+      padding: 13px 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
     }
-
-    .chat-header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .header-left { display: flex; align-items: center; gap: 10px; }
     .bot-avatar {
-      width: 40px;
-      height: 40px;
+      width: 38px; height: 38px;
       border-radius: 50%;
       background: rgba(255,255,255,0.18);
-      display: grid;
-      place-items: center;
-      font-size: 20px;
+      display: grid; place-items: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .bot-name { font-weight: 700; font-size: 14px; }
+    .bot-sub  { font-size: 11px; opacity: 0.88; margin-top: 1px; }
+    .btn-close {
+      border: none; background: transparent;
+      color: #fff; font-size: 17px;
+      cursor: pointer; padding: 4px; line-height: 1;
     }
 
-    .bot-name { font-weight: 700; font-size: 15px; }
-    .bot-subtitle { font-size: 11px; opacity: 0.9; }
-
-    .chat-close {
-      border: none;
-      background: transparent;
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    /* Messages */
+    /* ── Messages ── */
     .chat-messages {
       flex: 1;
       overflow-y: auto;
-      padding: 14px;
+      padding: 13px;
       background: #faf7f5;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 9px;
     }
+    .msg-row { display: flex; }
+    .msg-row.bot  { justify-content: flex-start; }
+    .msg-row.user { justify-content: flex-end; }
 
-    .message-row { display: flex; }
-    .bot-row { justify-content: flex-start; }
-    .user-row { justify-content: flex-end; }
-
-    .message {
-      max-width: 84%;
-      padding: 10px 13px;
-      border-radius: 18px;
-      font-size: 14px;
+    .bubble {
+      max-width: 82%;
+      padding: 9px 13px;
+      border-radius: 17px;
+      font-size: 13.5px;
       line-height: 1.5;
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .bubble.bot  { background: #fff; color: #2b2b2b; border: 1px solid #e7ddd6; }
+    .bubble.user { background: #8b1538; color: #fff; }
+    .bubble.typing { font-style: italic; opacity: 0.6; }
 
-    .bot-message {
-      background: #fff;
-      color: #2b2b2b;
-      border: 1px solid #e7ddd6;
-    }
-
-    .user-message {
-      background: #8b1538;
-      color: #fff;
-    }
-
-    .typing { font-style: italic; opacity: 0.7; }
-
-    /* Sources */
-    .message-sources {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px dashed #e7ddd6;
+    /* ── Sources ── */
+    .sources {
+      margin-top: 7px; padding-top: 7px;
+      border-top: 1px dashed #e0d6cf;
       font-size: 12px;
     }
-
-    .message-sources-title {
-      font-weight: 700;
-      color: #8b1538;
-      margin-bottom: 4px;
+    .sources-title { font-weight: 700; color: #8b1538; margin-bottom: 3px; }
+    .source-link {
+      display: block; color: #8b1538;
+      text-decoration: none; margin-bottom: 3px;
     }
+    .source-link:hover { text-decoration: underline; }
 
-    .message-source-link {
-      display: block;
-      color: #8b1538;
-      text-decoration: none;
-      margin-bottom: 3px;
-    }
-
-    .message-source-link:hover { text-decoration: underline; }
-
-    /* Quick replies */
+    /* ── Quick replies ── */
     .quick-replies {
-      padding: 8px 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+      padding: 8px 11px;
+      display: flex; flex-wrap: wrap; gap: 6px;
       background: #fff;
+      border-top: 1px solid #f0ebe7;
       flex-shrink: 0;
     }
-
-    .quick-reply {
+    .qbtn {
       border: 1px solid #e7ddd6;
       border-radius: 999px;
-      padding: 6px 12px;
+      padding: 5px 11px;
       background: #faf7f5;
       color: #8b1538;
       cursor: pointer;
       font-size: 12px;
+      font-family: inherit;
     }
+    .qbtn:hover { background: #f0e8e3; }
 
-    .quick-reply:hover { background: #f0e8e3; }
-
-    /* Input bar */
-    .chat-input-bar {
-      display: flex;
-      gap: 8px;
-      padding: 12px;
+    /* ── Input bar ── */
+    .chat-inputbar {
+      display: flex; gap: 8px;
+      padding: 10px 12px;
       background: #fff;
       border-top: 1px solid #e7ddd6;
       flex-shrink: 0;
     }
-
     .chat-input {
       flex: 1;
       border: 1px solid #e7ddd6;
       border-radius: 999px;
-      padding: 10px 14px;
-      font-size: 14px;
+      padding: 9px 14px;
+      font-size: 13.5px;
+      font-family: inherit;
       outline: none;
     }
+    .chat-input:focus   { border-color: #8b1538; }
+    .chat-input:disabled { background: #f5f5f5; }
 
-    .chat-input:focus { border-color: #8b1538; }
-
-    .chat-send {
-      width: 42px;
-      height: 42px;
-      border: none;
-      border-radius: 50%;
+    .btn-send {
+      width: 40px; height: 40px;
+      border: none; border-radius: 50%;
       background: linear-gradient(135deg, #8b1538, #6e102c);
-      color: #fff;
-      cursor: pointer;
-      font-size: 16px;
+      color: #fff; cursor: pointer;
+      font-size: 14px; flex-shrink: 0;
     }
+    .btn-send:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    @media (max-width: 480px) {
-      .chat-panel {
-        right: 10px;
-        left: 10px;
-        bottom: 80px;
-        width: auto;
-        height: calc(100vh - 100px);
+    @media (max-width: 420px) {
+      #chat-panel {
+        right: 8px; left: 8px;
+        bottom: 80px; width: auto;
+        height: calc(100dvh - 96px);
+        border-radius: 18px;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Launcher Button -->
-  <button id="chat-launcher" class="chat-launcher" aria-label="เปิดแชต">💬</button>
+  <!-- Launcher -->
+  <button id="chat-launcher" aria-label="เปิด OFAS Bot">💬</button>
 
-  <!-- Chat Panel -->
-  <section id="chat-panel" class="chat-panel hidden">
+  <!-- Panel -->
+  <div id="chat-panel" class="hidden" role="dialog" aria-label="OFAS Bot">
 
     <div class="chat-header">
-      <div class="chat-header-left">
+      <div class="header-left">
         <div class="bot-avatar">💼</div>
         <div>
           <div class="bot-name">OFAS Bot</div>
-          <div class="bot-subtitle">ผู้ช่วยด้านการเงิน การบัญชี และการพัสดุ</div>
+          <div class="bot-sub">ผู้ช่วยด้านการเงิน การบัญชี และการพัสดุ</div>
         </div>
       </div>
-      <button id="chat-close" class="chat-close">✕</button>
+      <button class="btn-close" id="btn-close" aria-label="ปิด">✕</button>
     </div>
 
-    <div id="chat-messages" class="chat-messages">
-      <div class="message-row bot-row">
-        <div class="message bot-message">
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg-row bot">
+        <div class="bubble bot">
           สวัสดีค่ะ ฉันคือ OFAS Bot ยินดีช่วยตอบคำถามด้านการเงิน การบัญชี และการพัสดุค่ะ
         </div>
       </div>
     </div>
 
     <div class="quick-replies">
-      <button class="quick-reply" data-text="ขั้นตอนการเบิกเงิน">ขั้นตอนการเบิกเงิน</button>
-      <button class="quick-reply" data-text="อัตราค่าเดินทาง">อัตราค่าเดินทาง</button>
-      <button class="quick-reply" data-text="สวัสดิการด้านสุขภาพ">สวัสดิการด้านสุขภาพ</button>
+      <button class="qbtn" data-q="ขั้นตอนการเบิกเงิน">ขั้นตอนการเบิกเงิน</button>
+      <button class="qbtn" data-q="อัตราค่าเดินทาง">อัตราค่าเดินทาง</button>
+      <button class="qbtn" data-q="สวัสดิการด้านสุขภาพ">สวัสดิการด้านสุขภาพ</button>
     </div>
 
-    <form id="chat-form" class="chat-input-bar">
-      <input id="chat-input" class="chat-input" type="text" placeholder="พิมพ์คำถาม..." autocomplete="off" />
-      <button type="submit" class="chat-send">➤</button>
-    </form>
+    <div class="chat-inputbar">
+      <input class="chat-input" id="chat-input" type="text"
+             placeholder="พิมพ์คำถาม..." autocomplete="off" />
+      <button class="btn-send" id="btn-send" type="button">➤</button>
+    </div>
 
-  </section>
+  </div>
 
   <script>
-    const launcher = document.getElementById("chat-launcher");
-    const panel = document.getElementById("chat-panel");
-    const closeBtn = document.getElementById("chat-close");
-    const form = document.getElementById("chat-form");
-    const input = document.getElementById("chat-input");
-    const messagesEl = document.getElementById("chat-messages");
-    const quickReplies = document.querySelectorAll(".quick-reply");
+    // ✅ เปลี่ยน URL นี้ให้ตรงกับ Netlify ของคุณ
+    const API_URL = "https://gemini-chat-widget-v2-2.netlify.app/.netlify/functions/chat";
 
-    // ⚠️ เปลี่ยน URL นี้ให้ตรงกับ Netlify/Vercel ของคุณ
-    const API_URL = "https://gemini-chat-widget-v2.netlify.app/.netlify/functions/chat";
+    const launcher   = document.getElementById("chat-launcher");
+    const panel      = document.getElementById("chat-panel");
+    const closeBtn   = document.getElementById("btn-close");
+    const messagesEl = document.getElementById("chat-messages");
+    const inputEl    = document.getElementById("chat-input");
+    const sendBtn    = document.getElementById("btn-send");
 
     const history = [];
 
-    launcher.addEventListener("click", () => panel.classList.toggle("hidden"));
+    // Toggle
+    launcher.addEventListener("click", () => {
+      panel.classList.toggle("hidden");
+      if (!panel.classList.contains("hidden")) inputEl.focus();
+    });
     closeBtn.addEventListener("click", () => panel.classList.add("hidden"));
 
-    function scrollToBottom() {
+    // Quick replies
+    document.querySelectorAll(".qbtn").forEach(btn =>
+      btn.addEventListener("click", () => send(btn.dataset.q))
+    );
+
+    // Send on Enter
+    inputEl.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(inputEl.value); }
+    });
+    sendBtn.addEventListener("click", () => send(inputEl.value));
+
+    // ── Helpers ──
+    function scrollBottom() {
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    function escapeHtml(text = "") {
-      return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
+    function esc(t = "") {
+      return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     }
 
-    function appendMessage(role, text, sources = []) {
-      const row = document.createElement("div");
-      row.className = `message-row ${role === "user" ? "user-row" : "bot-row"}`;
+    function addMessage(role, text, sources = []) {
+      const row    = document.createElement("div");
+      row.className = `msg-row ${role}`;
 
       const bubble = document.createElement("div");
-      bubble.className = `message ${role === "user" ? "user-message" : "bot-message"}`;
+      bubble.className = `bubble ${role}`;
 
-      let html = `<div>${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
+      let html = `<div>${esc(text).replace(/\n/g,"<br>")}</div>`;
 
       if (role === "bot" && sources.length > 0) {
-        const links = sources.filter(s => s.url).map(s =>
-          `<a class="message-source-link" href="${s.url}" target="_blank">${escapeHtml(s.name || "เอกสารอ้างอิง")}</a>`
-        ).join("");
-        if (links) {
-          html += `<div class="message-sources"><div class="message-sources-title">อ้างอิง</div>${links}</div>`;
-        }
+        const links = sources
+          .filter(s => s?.url)
+          .map(s => `<a class="source-link" href="${s.url}" target="_blank" rel="noopener">${esc(s.name || "เอกสารอ้างอิง")}</a>`)
+          .join("");
+        if (links) html += `<div class="sources"><div class="sources-title">อ้างอิง</div>${links}</div>`;
       }
 
       bubble.innerHTML = html;
       row.appendChild(bubble);
       messagesEl.appendChild(row);
-      scrollToBottom();
+      scrollBottom();
     }
 
-    function appendTyping() {
+    function showTyping() {
       const row = document.createElement("div");
-      row.className = "message-row bot-row";
+      row.className = "msg-row bot";
       row.id = "typing-row";
-      row.innerHTML = `<div class="message bot-message typing">กำลังพิมพ์...</div>`;
+      row.innerHTML = `<div class="bubble bot typing">กำลังพิมพ์...</div>`;
       messagesEl.appendChild(row);
-      scrollToBottom();
+      scrollBottom();
     }
 
-    function removeTyping() {
+    function hideTyping() {
       document.getElementById("typing-row")?.remove();
     }
 
-    async function sendMessage(text) {
+    function setLoading(on) {
+      inputEl.disabled = on;
+      sendBtn.disabled = on;
+    }
+
+    // ── Send ──
+    async function send(text) {
       const clean = String(text || "").trim();
       if (!clean) return;
 
-      appendMessage("user", clean);
+      addMessage("user", clean);
       history.push({ role: "user", text: clean });
-      input.value = "";
-      input.disabled = true;
-      appendTyping();
+      inputEl.value = "";
+      setLoading(true);
+      showTyping();
 
       try {
         const res = await fetch(API_URL, {
@@ -344,32 +323,23 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        removeTyping();
+        hideTyping();
 
-        const reply = data.reply || "ขออภัย ระบบไม่สามารถตอบได้";
+        const reply   = data.reply   || "ขออภัย ระบบไม่สามารถตอบได้";
         const sources = Array.isArray(data.sources) ? data.sources : [];
 
-        appendMessage("bot", reply, sources);
+        addMessage("bot", reply, sources);
         history.push({ role: "assistant", text: reply });
 
-      } catch (error) {
-        removeTyping();
-        appendMessage("bot", "เกิดข้อผิดพลาดในการเชื่อมต่อ");
-        console.error(error);
+      } catch (err) {
+        hideTyping();
+        addMessage("bot", "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้งค่ะ");
+        console.error("[OFAS Bot]", err);
       } finally {
-        input.disabled = false;
-        input.focus();
+        setLoading(false);
+        inputEl.focus();
       }
     }
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      sendMessage(input.value);
-    });
-
-    quickReplies.forEach(btn => {
-      btn.addEventListener("click", () => sendMessage(btn.dataset.text || ""));
-    });
   </script>
 
 </body>

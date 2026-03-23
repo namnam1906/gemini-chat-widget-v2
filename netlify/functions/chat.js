@@ -12,7 +12,10 @@ function jsonResponse(body, status = 200) {
     return new Response(JSON.stringify(body), {
         status,
         headers: {
-            "Content-Type": "application/json; charset=utf-8"
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
         }
     });
 }
@@ -42,6 +45,18 @@ ${context}
 const apiKey = process.env.MY_NEW_GEMINI_KEY || process.env.GEMINI_API_KEY;
 
 export default async (req) => {
+    // ✅ เพิ่มตรงนี้
+    if (req.method === "OPTIONS") {
+        return new Response(null, {
+            status: 204,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
+        });
+    }
+
     let userMessage = "";
     let agentId = "ofas-bot";
     let history = [];

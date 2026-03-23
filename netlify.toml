@@ -6,9 +6,9 @@
 
 [functions.chat]
   timeout = 60
-
+  
 [[headers]]
-  for = "/netlify/functions/*"
+  for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "POST, OPTIONS"
