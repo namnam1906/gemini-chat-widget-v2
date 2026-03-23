@@ -4,7 +4,8 @@ import { google } from "googleapis";
 // import { createRequire } from "module";
 // const require = createRequire(import.meta.url);
 // const pdf = require("pdf-parse");
-import pdf from "pdf-parse/lib/pdf-parse.js";
+// import pdf from "pdf-parse/lib/pdf-parse.js";
+import pdf from "pdf-parse"
 import mammoth from "mammoth";
 
 const DRIVE_READONLY_SCOPE = [
@@ -127,9 +128,19 @@ export async function downloadDriveFile(fileId) {
     return Buffer.from(response.data);
 }
 
+// async function extractPdfText(buffer) {
+//     const data = await pdf(buffer);
+//     return (data.text || "").trim();
+// }
+
 async function extractPdfText(buffer) {
-    const data = await pdf(buffer);
-    return (data.text || "").trim();
+    try {
+        const data = await pdf(buffer);
+        return data.text || "";
+    } catch (err) {
+        console.error("[pdf] parse error:", err);
+        return "";
+    }
 }
 
 async function extractDocxText(buffer) {
