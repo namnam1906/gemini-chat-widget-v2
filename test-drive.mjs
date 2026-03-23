@@ -1,52 +1,52 @@
 import "dotenv/config";
 import {
-  listDriveFilesRecursive,
-  listReadableDriveFilesRecursive,
-  loadReadableDriveDocumentsRecursive
+    listDriveFilesRecursive,
+    listReadableDriveFilesRecursive,
+    loadReadableDriveDocumentsRecursive
 } from "./lib/drive.js";
 
 async function main() {
-  console.log("=== ALL FILES (RECURSIVE) ===");
-  const allFiles = await listDriveFilesRecursive({
-    includeFolders: true
-  });
-
-  console.log("Found items:", allFiles.length);
-
-  for (const file of allFiles) {
-    console.log({
-      path: file.path,
-      mimeType: file.mimeType,
-      modifiedTime: file.modifiedTime
+    console.log("=== ALL FILES (RECURSIVE) ===");
+    const allFiles = await listDriveFilesRecursive({
+        includeFolders: true
     });
-  }
 
-  console.log("\n=== READABLE FILES ONLY ===");
-  const readableFiles = await listReadableDriveFilesRecursive();
+    console.log("Found items:", allFiles.length);
 
-  console.log("Readable files:", readableFiles.length);
+    for (const file of allFiles) {
+        console.log({
+            path: file.path,
+            mimeType: file.mimeType,
+            modifiedTime: file.modifiedTime
+        });
+    }
 
-  for (const file of readableFiles) {
-    console.log({
-      path: file.path,
-      mimeType: file.mimeType
-    });
-  }
+    console.log("\n=== READABLE FILES ONLY ===");
+    const readableFiles = await listReadableDriveFilesRecursive();
 
-  console.log("\n=== DOCUMENT CONTENT SAMPLE ===");
-  const documents = await loadReadableDriveDocumentsRecursive();
+    console.log("Readable files:", readableFiles.length);
 
-  console.log("Loaded documents:", documents.length);
+    for (const file of readableFiles) {
+        console.log({
+            path: file.path,
+            mimeType: file.mimeType
+        });
+    }
 
-  for (const doc of documents) {
-    console.log("\n--- DOCUMENT ---");
-    console.log("Path:", doc.path);
-    console.log("MimeType:", doc.mimeType);
-    console.log("Preview:", doc.text.slice(0, 300));
-  }
+    console.log("\n=== DOCUMENT CONTENT SAMPLE ===");
+    const documents = await loadReadableDriveDocumentsRecursive();
+
+    console.log("Loaded documents:", documents.length);
+
+    for (const doc of documents) {
+        console.log("\n--- DOCUMENT ---");
+        console.log("Path:", doc.path);
+        console.log("MimeType:", doc.mimeType);
+        console.log("Preview:", doc.text.slice(0, 500));
+    }
 }
 
 main().catch((err) => {
-  console.error(err);
-  process.exit(1);
+    console.error(err);
+    process.exit(1);
 });

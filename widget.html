@@ -4,11 +4,890 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OFAS Widget</title>
+    <title>OFAS Bot | สำนักบริหารการเงิน การบัญชี และการพัสดุ</title>
     <link rel="stylesheet" href="/widget.css" />
+    <style>
+        :root {
+            --brand-primary: #8b1538;
+            --brand-primary-dark: #6e102c;
+            --brand-accent: #caa24d;
+            --brand-bg: #f7f2ee;
+            --card-bg: #ffffff;
+            --text-main: #2b2b2b;
+            --text-soft: #666;
+            --line: #e7ddd6;
+            --shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 16px;
+            --max-width: 1180px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at top right, rgba(202, 162, 77, 0.08), transparent 22%),
+                linear-gradient(180deg, #fbf9f7 0%, var(--brand-bg) 100%);
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .site-shell {
+            min-height: 100vh;
+            padding-bottom: 110px;
+        }
+
+        .container {
+            width: min(var(--max-width), calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .top-strip {
+            background: var(--brand-primary);
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .top-strip-inner {
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 8px 0;
+        }
+
+        .top-strip-left,
+        .top-strip-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .main-nav-wrap {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .main-nav {
+            min-height: 78px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .brand-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-dark));
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 12px 24px rgba(139, 21, 56, 0.18);
+            flex: 0 0 auto;
+        }
+
+        .brand-text {
+            min-width: 0;
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: var(--brand-primary-dark);
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            color: var(--text-soft);
+            margin-top: 3px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .nav-links a {
+            font-size: 14px;
+            color: #4b4b4b;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: var(--brand-primary);
+        }
+
+        .hero {
+            padding: 34px 0 22px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .hero-card {
+            background:
+                radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 28%),
+                linear-gradient(135deg, var(--brand-primary) 0%, #7b1734 58%, var(--brand-primary-dark) 100%);
+            color: #fff;
+            border-radius: var(--radius-xl);
+            padding: 34px;
+            min-height: 410px;
+            box-shadow: 0 22px 48px rgba(110, 16, 44, 0.22);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::before,
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+        }
+
+        .hero-card::before {
+            width: 260px;
+            height: 260px;
+            top: -40px;
+            right: -50px;
+        }
+
+        .hero-card::after {
+            width: 130px;
+            height: 130px;
+            left: -26px;
+            bottom: 18px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 9px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .hero-title {
+            font-size: clamp(30px, 4.3vw, 52px);
+            line-height: 1.08;
+            margin: 0 0 12px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            max-width: 720px;
+        }
+
+        .hero-desc {
+            font-size: 16px;
+            line-height: 1.75;
+            margin: 0 0 20px;
+            max-width: 690px;
+            color: rgba(255, 255, 255, 0.96);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            border: none;
+            border-radius: 999px;
+            padding: 12px 18px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: var(--brand-primary);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+        }
+
+        .hero-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .hero-keyword {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .hero-side {
+            display: grid;
+            gap: 16px;
+        }
+
+        .side-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--line);
+            padding: 22px;
+            box-shadow: var(--shadow);
+        }
+
+        .side-card h3 {
+            margin: 0 0 8px;
+            font-size: 19px;
+            color: var(--brand-primary-dark);
+        }
+
+        .side-card p {
+            margin: 0;
+            line-height: 1.7;
+            color: var(--text-soft);
+            font-size: 14px;
+        }
+
+        .side-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .stat-card {
+            background: linear-gradient(180deg, #fffdfc 0%, #fff8f4 100%);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 18px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-soft);
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--brand-primary);
+        }
+
+        .section {
+            padding: 8px 0 0;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: 28px;
+            color: var(--brand-primary-dark);
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            margin: 6px 0 0;
+            font-size: 14px;
+            line-height: 1.65;
+            color: var(--text-soft);
+            max-width: 760px;
+        }
+
+        .service-grid,
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .service-card,
+        .news-card,
+        .contact-card {
+            background: var(--card-bg);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+        }
+
+        .service-card {
+            padding: 22px;
+        }
+
+        .service-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            font-size: 24px;
+            background: #f8efe9;
+            color: var(--brand-primary);
+            margin-bottom: 14px;
+        }
+
+        .service-card h3 {
+            margin: 0 0 8px;
+            font-size: 19px;
+            color: var(--brand-primary-dark);
+        }
+
+        .service-card p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-soft);
+        }
+
+        .service-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .service-tag {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            background: #fbf0f4;
+            border: 1px solid #edd6dd;
+            border-radius: 999px;
+            padding: 7px 10px;
+        }
+
+        .news-card {
+            overflow: hidden;
+        }
+
+        .news-thumb {
+            height: 120px;
+            background:
+                linear-gradient(135deg, rgba(139, 21, 56, 0.92), rgba(110, 16, 44, 0.88)),
+                linear-gradient(180deg, #8b1538, #6e102c);
+            color: #fff;
+            display: flex;
+            align-items: flex-end;
+            padding: 16px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .news-body {
+            padding: 18px 18px 20px;
+        }
+
+        .news-meta {
+            font-size: 12px;
+            color: var(--brand-primary);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .news-title {
+            margin: 0 0 8px;
+            font-size: 17px;
+            color: var(--brand-primary-dark);
+            line-height: 1.45;
+        }
+
+        .news-desc {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-soft);
+            line-height: 1.65;
+        }
+
+        .how-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .contact-card {
+            padding: 24px;
+        }
+
+        .contact-card h3 {
+            margin: 0 0 10px;
+            font-size: 22px;
+            color: var(--brand-primary-dark);
+        }
+
+        .contact-card p,
+        .contact-card li {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.75;
+            color: var(--text-soft);
+        }
+
+        .contact-list {
+            margin: 14px 0 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .step-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .step-item {
+            display: grid;
+            grid-template-columns: 40px 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .step-num {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #f6e9df;
+            color: var(--brand-primary);
+            font-weight: 800;
+        }
+
+        .step-item h4 {
+            margin: 0 0 4px;
+            font-size: 15px;
+            color: var(--brand-primary-dark);
+        }
+
+        .step-item p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.65;
+            color: var(--text-soft);
+        }
+
+        .cta {
+            margin-top: 20px;
+            padding: 24px;
+            border-radius: var(--radius-xl);
+            background:
+                linear-gradient(135deg, #fff7f1 0%, #fffdfb 100%);
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .cta h3 {
+            margin: 0 0 8px;
+            font-size: 26px;
+            color: var(--brand-primary-dark);
+        }
+
+        .cta p {
+            margin: 0;
+            color: var(--text-soft);
+            line-height: 1.7;
+            max-width: 720px;
+        }
+
+        .footer-note {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+
+        .floating-hint {
+            position: fixed;
+            right: 92px;
+            bottom: 28px;
+            background: #fff;
+            color: var(--brand-primary-dark);
+            border: 1px solid #ead9d1;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 999;
+        }
+
+        @media (max-width: 1024px) {
+
+            .hero-grid,
+            .how-grid,
+            .service-grid,
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                width: min(var(--max-width), calc(100% - 20px));
+            }
+
+            .hero-card {
+                padding: 24px 20px;
+                min-height: auto;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                width: 100%;
+            }
+
+            .side-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .floating-hint {
+                right: 78px;
+                bottom: 18px;
+                font-size: 11px;
+                padding: 8px 11px;
+            }
+        }
+    </style>
 </head>
 
 <body>
+    <div class="site-shell">
+        <div class="top-strip">
+            <div class="container top-strip-inner">
+                <div class="top-strip-left">
+                    <span>สำนักบริหารการเงิน การบัญชี และการพัสดุ</span>
+                    <span>จุฬาลงกรณ์มหาวิทยาลัย</span>
+                </div>
+                <div class="top-strip-right">
+                    <span>บริการข้อมูลด้านการเงิน การบัญชี และการพัสดุ</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-nav-wrap">
+            <div class="container main-nav">
+                <div class="brand">
+                    <div class="brand-logo">OF</div>
+                    <div class="brand-text">
+                        <div class="brand-title">OFAS Bot</div>
+                        <div class="brand-subtitle">ผู้ช่วยตอบคำถามด้านการเงิน การบัญชี และการพัสดุ</div>
+                    </div>
+                </div>
+
+                <nav class="nav-links">
+                    <a href="#services-section">บริการ</a>
+                    <a href="#news-section">ข่าวสาร</a>
+                    <a href="#guide-section">วิธีใช้งาน</a>
+                    <a href="#contact-section">ติดต่อ</a>
+                </nav>
+            </div>
+        </div>
+
+        <section class="hero">
+            <div class="container hero-grid">
+                <div class="hero-card">
+                    <div class="hero-badge">✨ AI Assistant สำหรับงาน OFAS</div>
+                    <h1 class="hero-title">
+                        สอบถามข้อมูลการเงิน การบัญชี และการพัสดุ ได้สะดวกในหน้าต่างแชตเดียว
+                    </h1>
+                    <p class="hero-desc">
+                        OFAS Bot ช่วยตอบคำถามเบื้องต้นจากเอกสารอ้างอิงของสำนัก เช่น ประกาศ ระเบียบ
+                        คู่มือ แนวปฏิบัติ และข้อมูลบริการต่าง ๆ เพื่อช่วยให้ค้นหาข้อมูลได้เร็วขึ้น
+                        และเข้าถึงเอกสารต้นฉบับได้ง่ายขึ้น
+                    </p>
+
+                    <div class="hero-actions">
+                        <button class="btn-primary" id="open-chat-main">เริ่มสนทนากับ OFAS Bot</button>
+                        <button class="btn-secondary" id="scroll-services">ดูบริการที่เกี่ยวข้อง</button>
+                    </div>
+
+                    <div class="hero-keywords">
+                        <div class="hero-keyword">การเงิน</div>
+                        <div class="hero-keyword">การบัญชี</div>
+                        <div class="hero-keyword">การพัสดุ</div>
+                        <div class="hero-keyword">เอกสารอ้างอิง</div>
+                        <div class="hero-keyword">ตอบไว</div>
+                    </div>
+                </div>
+
+                <div class="hero-side">
+                    <div class="side-card">
+                        <h3>OFAS Bot ช่วยเรื่องอะไรได้บ้าง</h3>
+                        <p>
+                            เหมาะสำหรับคำถามทั่วไปเกี่ยวกับบริการของสำนัก เช่น เอกสารประกอบการขอเบิกเงินสวัสดิการ
+                            แนวปฏิบัติต่าง ๆ ขั้นตอนดำเนินงาน หรือคำถามที่ต้องการเปิดดูเอกสารต้นฉบับเพิ่มเติม
+                        </p>
+                    </div>
+
+                    <div class="side-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">ตอบจาก</div>
+                            <div class="stat-value">Docs</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">อ้างอิง</div>
+                            <div class="stat-value">Drive</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">ช่องทาง</div>
+                            <div class="stat-value">Web Chat</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">ภาษา</div>
+                            <div class="stat-value">ไทย</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="services-section">
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <h2 class="section-title">บริการและข้อมูลที่สอบถามได้</h2>
+                        <p class="section-subtitle">
+                            หน้า OFAS ปัจจุบันมีหมวดบริการหลัก, ข่าวประชาสัมพันธ์, ประกาศจากสำนัก,
+                            ดาวน์โหลด, ข้อมูลบริจาค และข้อมูลติดต่อ ดังนั้น landing page นี้จึงจัดโครงแบบใกล้เคียง
+                            เพื่อให้สามารถวาง chatbot ได้กลมกลืนกับเว็บไซต์หลัก. :contentReference[oaicite:1]{index=1}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="service-grid">
+                    <article class="service-card">
+                        <div class="service-icon">💳</div>
+                        <h3>ข้อมูลด้านการเงิน</h3>
+                        <p>
+                            สอบถามข้อมูลเกี่ยวกับการเบิกจ่าย เอกสารประกอบการดำเนินการ และข้อมูลบริการที่เกี่ยวข้อง
+                            กับงานด้านการเงินของหน่วยงาน
+                        </p>
+                        <div class="service-tags">
+                            <span class="service-tag">การเบิกจ่าย</span>
+                            <span class="service-tag">เอกสารประกอบ</span>
+                        </div>
+                    </article>
+
+                    <article class="service-card">
+                        <div class="service-icon">📘</div>
+                        <h3>ข้อมูลด้านการบัญชี</h3>
+                        <p>
+                            ช่วยค้นหาประกาศ คู่มือ หรือแนวปฏิบัติที่เกี่ยวกับกระบวนการทางบัญชี
+                            และข้อมูลอ้างอิงที่จำเป็นสำหรับการทำงาน
+                        </p>
+                        <div class="service-tags">
+                            <span class="service-tag">คู่มือ</span>
+                            <span class="service-tag">แนวปฏิบัติ</span>
+                        </div>
+                    </article>
+
+                    <article class="service-card">
+                        <div class="service-icon">📦</div>
+                        <h3>ข้อมูลด้านพัสดุ</h3>
+                        <p>
+                            ค้นหาข้อมูลแนวปฏิบัติด้านพัสดุ ข่าวประกาศ หรือเอกสารที่เกี่ยวข้องกับงานจัดซื้อจัดจ้าง
+                            และการยืมพัสดุเบื้องต้น
+                        </p>
+                        <div class="service-tags">
+                            <span class="service-tag">พัสดุ</span>
+                            <span class="service-tag">จัดซื้อจัดจ้าง</span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="news-section">
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <h2 class="section-title">ข่าวสารและประกาศ</h2>
+                        <p class="section-subtitle">
+                            หน้าเว็บไซต์ OFAS มีหมวดข่าวสารประชาสัมพันธ์และประกาศจากสำนักแยกต่างหาก
+                            เช่น เรื่องภาษี การปิดบัญชีสิ้นปี และเอกสารประกอบการขอเบิกเงินสวัสดิการ.
+                            :contentReference[oaicite:2]{index=2}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="news-grid">
+                    <article class="news-card">
+                        <div class="news-thumb">ข่าวประชาสัมพันธ์</div>
+                        <div class="news-body">
+                            <div class="news-meta">หมวดข้อมูลอ้างอิง</div>
+                            <h3 class="news-title">ภาษี การปิดบัญชี และแนวปฏิบัติที่เกี่ยวข้อง</h3>
+                            <p class="news-desc">
+                                ใช้ OFAS Bot เพื่อค้นหาข้อมูลหรือประกาศที่เกี่ยวข้องกับประเด็นด้านการเงิน
+                                และการดำเนินงานของหน่วยงานได้รวดเร็วขึ้น
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="news-card">
+                        <div class="news-thumb">ประกาศจากสำนัก</div>
+                        <div class="news-body">
+                            <div class="news-meta">หมวดข้อมูลอ้างอิง</div>
+                            <h3 class="news-title">เอกสารประกอบการขอเบิกเงินสวัสดิการ</h3>
+                            <p class="news-desc">
+                                ช่วยค้นหาคำตอบเบื้องต้นเกี่ยวกับเอกสารประกอบ เงื่อนไข หรือประกาศที่เกี่ยวข้อง
+                                พร้อมลิงก์ไปยังเอกสารต้นฉบับเมื่อมีข้อมูลอ้างอิง
+                            </p>
+                        </div>
+                    </article>
+
+                    <article class="news-card">
+                        <div class="news-thumb">บริการสำนัก</div>
+                        <div class="news-body">
+                            <div class="news-meta">หมวดบริการ</div>
+                            <h3 class="news-title">สอบถามขั้นตอนและบริการที่เกี่ยวข้อง</h3>
+                            <p class="news-desc">
+                                ผู้ใช้สามารถถามขั้นตอนทั่วไปหรือค้นหาข้อมูลบริการสำนักจากหน้าต่างแชตได้ทันที
+                                โดยไม่ต้องเปิดหลายเมนูทีละหน้า
+                            </p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="guide-section">
+            <div class="container how-grid">
+                <article class="contact-card">
+                    <h3>วิธีใช้งาน OFAS Bot</h3>
+                    <div class="step-list">
+                        <div class="step-item">
+                            <div class="step-num">1</div>
+                            <div>
+                                <h4>เปิดหน้าต่างแชต</h4>
+                                <p>กดปุ่มแชตที่มุมขวาล่างเพื่อเริ่มสนทนา</p>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-num">2</div>
+                            <div>
+                                <h4>พิมพ์คำถามที่ต้องการ</h4>
+                                <p>เช่น เอกสารประกอบการขอเบิกเงินสวัสดิการ หรือแนวปฏิบัติเกี่ยวกับพัสดุ</p>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-num">3</div>
+                            <div>
+                                <h4>ตรวจคำตอบและเอกสารอ้างอิง</h4>
+                                <p>หากมีเอกสารประกอบ ระบบจะแสดงลิงก์ให้เปิด Google Drive เพิ่มเติมได้</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="contact-card" id="contact-section">
+                    <h3>ข้อมูลติดต่อ</h3>
+                    <p>
+                        เว็บไซต์ OFAS แสดงข้อมูลติดต่อของสำนักไว้ที่อาคารจามจุรี 5 ชั้น 2 และ 3
+                        พร้อมหมายเลขโทรศัพท์ของฝ่ายการเงิน การบัญชี และการพัสดุ. :contentReference[oaicite:3]{index=3}
+                    </p>
+                    <ul class="contact-list">
+                        <li>ฝ่ายการเงิน: 0-2218-0428</li>
+                        <li>ฝ่ายการบัญชี: 0-2218-0071, 0-2218-0073</li>
+                        <li>ฝ่ายการพัสดุ: 0-2218-0080</li>
+                        <li>ธุรการ: 0-2218-0051-53</li>
+                    </ul>
+                </article>
+            </div>
+
+            <div class="container">
+                <div class="cta">
+                    <div>
+                        <h3>พร้อมเริ่มถามคำถามแล้วหรือยัง</h3>
+                        <p>
+                            ลองสอบถามข้อมูลการเงิน การบัญชี หรือการพัสดุผ่าน OFAS Bot ได้ทันที
+                            และถ้าระบบพบเอกสารอ้างอิง ก็สามารถเปิดต้นฉบับจาก Google Drive ต่อได้ทันที
+                        </p>
+                        <div class="footer-note">
+                            หมายเหตุ: คำตอบจากระบบควรใช้เพื่อประกอบการตรวจสอบข้อมูล และในกรณีที่เป็นเรื่องสำคัญ
+                            ควรตรวจสอบกับเจ้าหน้าที่ของสำนักเพิ่มเติม
+                        </div>
+                    </div>
+                    <button class="btn-primary" id="open-chat-cta">เปิด OFAS Bot</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="floating-hint">คลิกเพื่อเริ่มคุยกับ OFAS Bot</div>
+
     <div id="widget-root">
         <button id="chat-launcher" class="chat-launcher" aria-label="เปิดแชต">
             <span class="launcher-icon">💬</span>
@@ -17,10 +896,10 @@
         <section id="chat-panel" class="chat-panel hidden" aria-label="AI Chat">
             <div class="chat-header">
                 <div class="chat-header-left">
-                    <div class="bot-avatar">🤖</div>
+                    <div class="bot-avatar">💼</div>
                     <div>
                         <div class="bot-name">OFAS Bot</div>
-                        <div class="bot-subtitle">ผู้ช่วยการเงิน</div>
+                        <div class="bot-subtitle">ผู้ช่วยด้านการเงิน การบัญชี และการพัสดุ</div>
                     </div>
                 </div>
 
@@ -30,27 +909,47 @@
             <div id="chat-messages" class="chat-messages">
                 <div class="message-row bot-row">
                     <div class="message bot-message">
-                        สวัสดีค่ะ ฉันคือ OFAS Bot ผู้ช่วยการเงิน
-                        ยินดีช่วยตอบคำถามเกี่ยวกับอัตราการจ่าย ประกาศจุฬาฯ และข้อมูลทั่วไปค่ะ
+                        สวัสดีค่ะ ฉันคือ OFAS Bot
+                        ยินดีช่วยตอบคำถามเบื้องต้นเกี่ยวกับการเงิน การบัญชี การพัสดุ
+                        และข้อมูลจากเอกสารอ้างอิงของสำนักค่ะ
                     </div>
                 </div>
             </div>
 
             <div class="quick-replies" id="quick-replies">
-                <button class="quick-reply" data-text="อัตราการจ่าย">อัตราการจ่าย</button>
-                <button class="quick-reply" data-text="ประกาศจุฬาฯ">ประกาศจุฬาฯ</button>
-                <button class="quick-reply" data-text="สวัสดิการด้านสุขภาพ">สวัสดิการด้านสุขภาพ</button>
-                <!-- <button class="quick-reply" data-text="ประกันสุขภาพแบบกลุ่ม">ประกันสุขภาพแบบกลุ่ม</button> -->
+                <button class="quick-reply"
+                    data-text="เอกสารประกอบการขอเบิกเงินสวัสดิการ">เอกสารประกอบการขอเบิกเงินสวัสดิการ</button>
+                <button class="quick-reply" data-text="แนวปฏิบัติการยืมพัสดุ">แนวปฏิบัติการยืมพัสดุ</button>
+                <button class="quick-reply" data-text="ปิดบัญชีสิ้นปีงบประมาณ">ปิดบัญชีสิ้นปีงบประมาณ</button>
+                <button class="quick-reply" data-text="การหักภาษี ณ ที่จ่าย">การหักภาษี ณ ที่จ่าย</button>
             </div>
 
             <form id="chat-form" class="chat-input-bar">
-                <input id="chat-input" class="chat-input" type="text" placeholder="พิมพ์ข้อความ..."
-                    autocomplete="off" />
+                <input id="chat-input" class="chat-input" type="text" placeholder="พิมพ์คำถาม..." autocomplete="off" />
                 <button id="chat-send" class="chat-send" type="submit">➤</button>
             </form>
         </section>
     </div>
 
+    <script>
+        function openWidgetPanel() {
+            const panel = document.getElementById("chat-panel");
+            if (panel) {
+                panel.classList.remove("hidden");
+            }
+        }
+
+        function scrollToServices() {
+            const target = document.getElementById("services-section");
+            if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+
+        document.getElementById("open-chat-main")?.addEventListener("click", openWidgetPanel);
+        document.getElementById("open-chat-cta")?.addEventListener("click", openWidgetPanel);
+        document.getElementById("scroll-services")?.addEventListener("click", scrollToServices);
+    </script>
     <script src="/widget.js"></script>
 </body>
 

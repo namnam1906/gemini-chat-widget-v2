@@ -113,6 +113,8 @@ async function sendMessage(text) {
 
     input.value = "";
     appendTyping();
+    // เพิ่มหลัง appendTyping()
+    input.disabled = true;
 
     try {
         const res = await fetch("/.netlify/functions/chat", {
@@ -121,11 +123,15 @@ async function sendMessage(text) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                agentId: "nexky-hr",
+                agentId: "ofas-bot",
                 message: cleanText,
                 history
             })
         });
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
 
         const data = await res.json();
         removeTyping();
@@ -139,8 +145,13 @@ async function sendMessage(text) {
         removeTyping();
         const fallback = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
         appendBotMessage(fallback, []);
-        history.push({ role: "assistant", text: fallback });
+        // ❌ ลบบรรทัดนี้ออก
+        // history.push({ role: "assistant", text: fallback });
         console.error(error);
+    } finally {
+        // เพิ่มใน finally
+        input.disabled = false;
+        input.focus();
     }
 }
 

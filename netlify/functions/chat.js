@@ -3,154 +3,149 @@ import {
     retrieveRelevantDocuments,
     buildRetrievalContext
 } from "../../lib/retrieval.js";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { buildSystemInstruction, getAgentConfig } from "../../config/agent.js";
 import { prepareConversationMemory } from "../../lib/memory.js";
+import { clearCache } from "../../lib/cache.js";
 
 function jsonResponse(body, status = 200) {
     return new Response(JSON.stringify(body), {
         status,
-        headers: {
-            "Content-Type": "application/json"
-        }
+        headers: { "Content-Type": "application/json" }
     });
 }
 
-// function buildUserPrompt(userMessage) {
-//     return `คำถามของผู้ใช้:\n${userMessage}`.trim();
+// function buildRagPrompt(userMessage, context) {
+//     return `
+// คุณคือผู้ช่วยเจ้าหน้าที่การเงิน
+// คำถามของผู้ใช้: ${userMessage}
+
+// =========================
+// ข้อมูลอ้างอิงจากเอกสาร:
+// =========================
+// ${context || "ไม่มีข้อมูลที่เกี่ยวข้อง"}
+
+// =========================
+// คำสั่งเพิ่มเติม:
+// =========================
+// - ตอบโดยอิงจาก "ข้อมูลอ้างอิง" เท่านั้น ห้ามเดา
+// - ถ้าไม่มีข้อมูล ให้ตอบว่า "ไม่พบข้อมูลที่เกี่ยวข้องในเอกสาร กรุณาติดต่อเจ้าหน้าที่การเงิน"
+// - ตอบเป็นภาษาไทยสุภาพและกระชับ
+// `.trim();
 // }
 
 function buildRagPrompt(userMessage, context) {
-    return `
-คุณคือผู้ช่วยเจ้าหน้าที่การเงิน
+    if (!context) {
+        // ไม่มีเอกสาร → ให้ตอบจาก system instruction ได้เลย
+        return userMessage;
+    }
 
-คำถามของผู้ใช้:
-${userMessage}
+    // มีเอกสาร → ใช้ RAG context
+    return `
+คำถามของผู้ใช้: ${userMessage}
 
 =========================
 ข้อมูลอ้างอิงจากเอกสาร:
 =========================
-${context || "ไม่มีข้อมูลที่เกี่ยวข้อง"}
+${context}
 
 =========================
-คำสั่ง:
+คำสั่งเพิ่มเติม:
 =========================
-- ให้ตอบโดยอิงจาก "ข้อมูลอ้างอิง" เท่านั้น
-- ห้ามเดาข้อมูล
-- ถ้าไม่มีข้อมูล ให้ตอบว่า:
-  "ไม่พบข้อมูลที่เกี่ยวข้องในเอกสาร กรุณาติดต่อเจ้าหน้าที่ HR"
-- ตอบเป็นภาษาไทยสุภาพ
-- ถ้าเป็นขั้นตอน ให้ตอบเป็นข้อ ๆ
+- ตอบโดยอิงจาก "ข้อมูลอ้างอิง" เท่านั้น ห้ามเดา
+- ถ้าไม่มีข้อมูล ให้ตอบว่า "ไม่พบข้อมูลที่เกี่ยวข้องในเอกสาร กรุณาติดต่อเจ้าหน้าที่การเงิน"
+- ตอบเป็นภาษาไทยสุภาพและกระชับ
 `.trim();
 }
 
+const apiKey = process.env.MY_NEW_GEMINI_KEY || process.env.GEMINI_API_KEY;
+
 export default async (req, context) => {
     try {
-        if (req.method !== "POST") {
-            return jsonResponse({ error: "Method not allowed" }, 405);
-        }
+        if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405);
 
-        if (!process.env.GEMINI_API_KEY) {
-            return jsonResponse({ reply: "ระบบยังไม่ได้ตั้งค่า API key" }, 500);
-        }
+        if (!apiKey) return jsonResponse({ reply: "ระบบยังไม่ได้ตั้งค่า API key" }, 500);
 
         const body = await req.json().catch(() => null);
-
-        if (!body || typeof body !== "object") {
-            return jsonResponse({ reply: "รูปแบบข้อมูลไม่ถูกต้อง" }, 400);
-        }
-
-        const {
-            message = "",
-            history = [],
-            agentId = "ofas-bot"
-        } = body;
-
+        const { message = "", history = [], agentId = "ofas-bot" } = body || {};
         const userMessage = typeof message === "string" ? message.trim() : "";
 
-        // 🔥 STEP: Retrieval จาก Google Drive
-        const relevantDocs = await retrieveRelevantDocuments(userMessage, {
-            topK: 3,
-            minScore: 1
-        });
+        if (!userMessage) return jsonResponse({ reply: "กรุณาพิมพ์ข้อความก่อนส่ง" }, 400);
 
-        const retrievalContext = buildRetrievalContext(relevantDocs);
-
-        if (!userMessage) {
-            return jsonResponse({ reply: "กรุณาพิมพ์ข้อความก่อนส่ง" }, 400);
+        if (userMessage === "/refresh") {
+            clearCache("knowledge-base");
+            return jsonResponse({ reply: "รีเฟรชข้อมูลเรียบร้อยแล้ว", sources: [] });
         }
 
+        const relevantDocs = await retrieveRelevantDocuments(userMessage, { topK: 3, minScore: 1 });
+        const retrievalContext = buildRetrievalContext(relevantDocs);
         const agent = getAgentConfig(agentId);
 
-        const { geminiContents, trimmed } = prepareConversationMemory(
-            history,
-            agent.maxHistoryMessages
+        // เตรียม Memory
+        const { geminiContents } = prepareConversationMemory(history, agent.maxHistoryMessages);
+
+        // กรองความถูกต้องของประวัติ (สลับ Role ให้ถูกต้อง)
+        const validHistory = (geminiContents || []).filter(item =>
+            item.parts && item.parts.length > 0 && item.parts[0].text
         );
 
-        const ai = new GoogleGenAI({
-            apiKey: process.env.GEMINI_API_KEY
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            systemInstruction: buildSystemInstruction() // กลับมาใช้แบบมาตรฐาน
         });
 
-        console.log("USING API KEY FROM chat.js =", process.env.GEMINI_API_KEY?.slice(0, 12));
+        console.log("USING API KEY PREFIX:", apiKey.slice(0, 7));
 
-        console.log("=== USER QUESTION ===");
-        console.log(userMessage);
-
-        console.log("=== RETRIEVED DOCS ===");
-        console.log(relevantDocs.map(d => ({
-            name: d.name,
-            score: d.score
-        })));
-
-        console.log("=== CONTEXT ===");
-        console.log(retrievalContext.slice(0, 500));
-
-        // 🔥 เรียก Gemini
-        const response = await ai.models.generateContent({
-            model: agent.model,
-            config: {
-                systemInstruction: buildSystemInstruction()
+        // 🔥 ใช้ระบบ Chat Session เพื่อให้ SDK จัดการลำดับ Role ให้เอง
+        const chat = model.startChat({
+            history: validHistory,
+            generationConfig: {
+                maxOutputTokens: 1000,
             },
-            contents: [
-                ...geminiContents,
-                {
-                    role: "user",
-                    // parts: [{ text: buildUserPrompt(userMessage) }]
-                    parts: [
-                        {
-                            text: buildRagPrompt(userMessage, retrievalContext)
-                        }
-                    ]
-                }
-            ]
         });
 
-        const reply =
-            typeof response.text === "string" && response.text.trim()
-                ? response.text.trim()
-                : agent.fallbackMessage;
+        // ส่ง Prompt ที่มี RAG Context เข้าไป
+        const prompt = buildRagPrompt(userMessage, retrievalContext);
+        const result = await chat.sendMessage(prompt);
+        const response = await result.response;
+        const replyText = response.text();
 
         return jsonResponse({
-            reply,
+            reply: replyText?.trim() || agent.fallbackMessage,
+            sources: relevantDocs.map(doc => ({
+                name: doc.name,
+                url: doc.webViewLink
+            })),
             meta: {
-                agentId: agent.id,
-                agentName: agent.name,
-                usedModel: agent.model,
-                memoryCount: trimmed.length
+                usedModel: "gemini-2.5-flash",
+                sourceCount: relevantDocs.length,
+                historyCount: validHistory.length
             }
         });
+
     } catch (error) {
-        console.error("Chat function error:", error);
-        console.error("Gemini call failed");
+        console.error("Chat Error:", error.message);
 
-        const fallbackAgent = getAgentConfig("ofas-bot");
+        // ถ้าติดปัญหาเรื่องลำดับ Role อีก ให้ลองส่งแบบไม่มี History
+        if (error.message.includes("role")) {
+            console.log("Retrying without history due to role mismatch...");
+            try {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                // const result = await model.generateContent(buildRagPrompt(userMessage, ""));
+                // ✅ ใช้ userMessage || "" เพื่อป้องกัน undefined
+                const result = await model.generateContent(buildRagPrompt(userMessage || "", ""));
+                const res = await result.response;
+                return jsonResponse({ reply: res.text(), sources: [] });
+            } catch (retryError) {
+                return jsonResponse({ reply: "ขออภัย ระบบขัดข้องเรื่องลำดับข้อความ" }, 500);
+            }
+        }
 
-        return jsonResponse(
-            {
-                reply: fallbackAgent.fallbackMessage,
-                error: "internal_error"
-            },
-            500
-        );
+        return jsonResponse({
+            reply: "ขออภัยครับ ระบบขัดข้องชั่วคราว",
+            error: error.message
+        }, 500);
     }
 };

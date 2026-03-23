@@ -3,102 +3,249 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>OFAS Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Chat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
+            margin: 24px;
             background: #f7f7f7;
         }
 
+        h1 {
+            margin-top: 0;
+        }
+
         #chat {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            max-width: 760px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 16px;
         }
 
         #messages {
-            flex: 1;
-            padding: 10px;
+            min-height: 280px;
+            max-height: 520px;
             overflow-y: auto;
+            padding: 8px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            background: #fafafa;
+            margin-bottom: 12px;
         }
 
         .msg {
-            margin: 8px 0;
+            margin: 10px 0;
+            line-height: 1.5;
+            white-space: pre-wrap;
         }
 
         .user {
             text-align: right;
-            color: blue;
+            color: #0b57d0;
+            font-weight: 600;
         }
 
         .bot {
             text-align: left;
-            color: black;
+            color: #222;
         }
 
-        #input {
+        .sources {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed #ddd;
+            font-size: 12px;
+        }
+
+        .sources-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #666;
+        }
+
+        .sources a {
+            display: block;
+            color: #8b1538;
+            text-decoration: none;
+            margin-bottom: 3px;
+        }
+
+        .sources a:hover {
+            text-decoration: underline;
+        }
+
+        #chat-form {
             display: flex;
-            border-top: 1px solid #ccc;
+            gap: 8px;
         }
 
-        input {
+        #text {
             flex: 1;
-            padding: 10px;
-            border: none;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 14px;
         }
 
-        button {
-            padding: 10px;
+        #send {
+            padding: 10px 16px;
             border: none;
-            background: hotpink;
-            color: white;
+            border-radius: 10px;
+            background: #8b1538;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .typing {
+            color: #777;
+            font-style: italic;
         }
     </style>
 </head>
 
 <body>
+    <h1>Test Chat</h1>
 
     <div id="chat">
         <div id="messages"></div>
 
-        <div id="input">
-            <input id="text" placeholder="พิมพ์ข้อความ..." />
-            <button onclick="send()">ส่ง</button>
-        </div>
+        <form id="chat-form">
+            <input id="text" type="text" placeholder="พิมพ์ข้อความ..." autocomplete="off" />
+            <button id="send" type="submit">ส่ง</button>
+        </form>
     </div>
 
     <script>
-        async function send() {
-            const input = document.getElementById("text");
-            const msg = input.value;
-            if (!msg) return;
+        const messagesEl = document.getElementById("messages");
+        const formEl = document.getElementById("chat-form");
+        const textEl = document.getElementById("text");
+        const sendEl = document.getElementById("send");
 
-            append("user", msg);
-            input.value = "";
+        const history = [];
 
-            const res = await fetch("/.netlify/functions/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: msg })
-            });
-
-            const data = await res.json();
-
-            append("bot", data.reply);
+        function escapeHtml(text = "") {
+            return String(text)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
         }
 
-        function append(role, text) {
-            const div = document.createElement("div");
-            div.className = "msg " + role;
-            div.innerText = role + ": " + text;
-            document.getElementById("messages").appendChild(div);
+        function scrollToBottom() {
+            messagesEl.scrollTop = messagesEl.scrollHeight;
         }
+
+        function appendMessage(role, text, sources = []) {
+            const wrapper = document.createElement("div");
+            wrapper.className = `msg ${role}`;
+
+            let html = `<div><strong>${role === "user" ? "user" : "bot"}:</strong> ${escapeHtml(text).replace(/\n/g, "<br>")}</div>`;
+
+            if (role === "bot" && Array.isArray(sources) && sources.length > 0) {
+                const validSources = sources.filter(s => s && s.url);
+                if (validSources.length > 0) {
+                    html += `
+            <div class="sources">
+              <div class="sources-title">อ้างอิง</div>
+              ${validSources.map(source => `
+                <a href="${source.url}" target="_blank" rel="noopener noreferrer">
+                  ${escapeHtml(source.name || source.path || "เอกสารอ้างอิง")}
+                </a>
+              `).join("")}
+            </div>
+          `;
+                }
+            }
+
+            wrapper.innerHTML = html;
+            messagesEl.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function appendTyping() {
+            const typing = document.createElement("div");
+            typing.className = "msg bot typing";
+            typing.id = "typing-indicator";
+            typing.innerHTML = "<strong>bot:</strong> กำลังพิมพ์...";
+            messagesEl.appendChild(typing);
+            scrollToBottom();
+        }
+
+        function removeTyping() {
+            const typing = document.getElementById("typing-indicator");
+            if (typing) typing.remove();
+        }
+
+        async function sendMessage(message) {
+            const clean = String(message || "").trim();
+            if (!clean) return;
+
+            appendMessage("user", clean);
+            history.push({ role: "user", text: clean });
+
+            textEl.value = "";
+            textEl.focus();
+            sendEl.disabled = true;
+            appendTyping();
+
+            try {
+                const res = await fetch("/.netlify/functions/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        agentId: "ofas-bot",
+                        message: clean,
+                        history
+                    })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const data = await res.json();
+                removeTyping();
+
+                const reply = data.reply || "ขออภัย ระบบไม่สามารถตอบได้";
+                const sources = Array.isArray(data.sources) ? data.sources : [];
+
+                appendMessage("bot", reply, sources);
+                history.push({ role: "assistant", text: reply });
+            } catch (error) {
+                removeTyping();
+                let reply = "เกิดข้อผิดพลาดในการเชื่อมต่อ";
+
+                if (String(error.message).startsWith("HTTP 500")) {
+                    reply = "ระบบตอบกลับผิดพลาดจากฝั่ง server";
+                }
+
+                appendMessage("bot", reply);
+                // ❌ ลบบรรทัดนี้ออก ไม่ push history เมื่อ error
+                // history.push({ role: "assistant", text: reply });
+                console.error(error);
+            } finally {
+                sendEl.disabled = false;
+                textEl.focus();
+            }
+        }
+
+        formEl.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            await sendMessage(textEl.value);
+        });
+
+        textEl.focus();
     </script>
-
 </body>
 
 </html>

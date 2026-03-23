@@ -32,6 +32,9 @@
             if (!userText) return;
 
             appendMessage("user", userText);
+            // history.push({ role: "user", text: userText });
+            // history.push({ role: "user", parts: [{ text: userText }] });
+            // history.push({ role: "assistant", text: userText });
             history.push({ role: "user", text: userText });
             text.value = "";
 
@@ -47,8 +50,16 @@
                 })
             });
 
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+
             const data = await res.json();
+            console.log("API RESPONSE =", data);
+
             appendMessage("bot", data.reply);
+            // history.push({ role: "assistant", text: data.reply });
+            // history.push({ role: "model", parts: [{ text: data.reply }] });
             history.push({ role: "assistant", text: data.reply });
         });
     </script>
